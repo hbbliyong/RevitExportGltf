@@ -307,7 +307,11 @@ namespace RevitExportGltf
             //新节点
             glTFNode newNode = new glTFNode();
             newNode.name = e.Name + "[" + e.Id.ToString() + "]";
-
+            //扩展属性
+            glTFExtras extras = new glTFExtras();
+            extras.UniqueId = e.UniqueId;
+            extras.Properties = Util.GetElementProperties(e, true);
+            newNode.extras = extras;
 
             Debug.WriteLine("Finishing...");
             //获取构件的任意两个点

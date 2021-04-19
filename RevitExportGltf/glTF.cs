@@ -75,7 +75,7 @@ namespace RevitExportGltf
         /// <summary>
         ///附加属性
         /// </summary>
-        // public glTFExtras extras { get; set; }
+        public glTFExtras extras { get; set; }
     }
 
 
@@ -322,5 +322,13 @@ namespace RevitExportGltf
         public string name { get; set; }
     }
     #endregion
-
+    public class glTFExtras
+    {
+        /// <summary>
+        /// The Revit created UniqueId for this object
+        /// </summary>
+        public string UniqueId { get; set; }
+       // public GridParameters GridParameters { get; set; }
+        public Dictionary<string, string> Properties { get; set; }
+    }
 }
