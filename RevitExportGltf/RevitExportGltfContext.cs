@@ -446,8 +446,14 @@ namespace RevitExportGltf
                         currentAsset = node.GetAppearance();
                     }
                     //取得Asset中贴图信息
-                    string textureFile = (FindTextureAsset(currentAsset as AssetProperty).FindByName("unifiedbitmap_Bitmap")
+#if R18
+                    string textureFile = (FindTextureAsset(currentAsset as AssetProperty)["unifiedbitmap_Bitmap"]
                         as AssetPropertyString).Value.Split('|')[0];
+#else
+string textureFile = (FindTextureAsset(currentAsset as AssetProperty).FindByName("unifiedbitmap_Bitmap")
+                        as AssetPropertyString).Value.Split('|')[0];
+#endif
+
                     //用Asset中贴图信息和注册表里的材质库地址得到贴图文件所在位置
                     texturePath = Path.Combine(textureFolder, textureFile.Replace("/", "\\"));
                 }
