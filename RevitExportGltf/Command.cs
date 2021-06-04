@@ -55,7 +55,7 @@ namespace RevitExportGltf
             }
 
             //3D视图下
-            View3D view = doc.ActiveView as View3D;
+            Autodesk.Revit.DB.View view = doc.ActiveView as View3D;
             if (null == view)
             {
                 message = "Please run this command in a 3D view.";
@@ -77,7 +77,7 @@ namespace RevitExportGltf
                 {
                     //是否包括Geom对象
                     exporter.IncludeGeometricObjects = false;
-                    exporter.ShouldStopOnError = true;
+               //     exporter.ShouldStopOnError = true;
                     //导出3D模型
                     exporter.Export(view);
                 }

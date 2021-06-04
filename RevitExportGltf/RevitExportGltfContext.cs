@@ -8,12 +8,101 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static RevitExportGltf.Util;
 
 namespace RevitExportGltf
 {
+    class RevitExportGltfContext1 : IExportContext
+    {
+        public RevitExportGltfContext1(Document document, string fileName, int precisionValue) { }
+        public void Finish()
+        {
+            // throw new NotImplementedException();
+        }
 
+        public bool IsCanceled()
+        {
+            // throw new NotImplementedException();
+            return false;
+        }
+
+        public RenderNodeAction OnElementBegin(ElementId elementId)
+        {
+            return RenderNodeAction.Proceed;
+        }
+
+        public void OnElementEnd(ElementId elementId)
+        {
+            //throw new NotImplementedException();
+        }
+
+        public RenderNodeAction OnFaceBegin(FaceNode node)
+        {
+            return RenderNodeAction.Proceed;
+        }
+
+        public void OnFaceEnd(FaceNode node)
+        {
+            // throw new NotImplementedException();
+        }
+
+        public RenderNodeAction OnInstanceBegin(InstanceNode node)
+        {
+            return RenderNodeAction.Proceed;
+        }
+
+        public void OnInstanceEnd(InstanceNode node)
+        {
+
+        }
+
+        public void OnLight(LightNode node)
+        {
+
+        }
+
+        public RenderNodeAction OnLinkBegin(LinkNode node)
+        {
+            return RenderNodeAction.Proceed;
+        }
+
+        public void OnLinkEnd(LinkNode node)
+        {
+
+        }
+
+        public void OnMaterial(MaterialNode node)
+        {
+
+        }
+
+        public void OnPolymesh(PolymeshTopology node)
+        {
+
+        }
+
+        public void OnRPC(RPCNode node)
+        {
+
+        }
+
+        public RenderNodeAction OnViewBegin(ViewNode node)
+        {
+            return RenderNodeAction.Proceed;
+        }
+
+        public void OnViewEnd(ElementId elementId)
+        {
+
+        }
+
+        public bool Start()
+        {
+            return true;
+        }
+    }
     class RevitExportGltfContext : IExportContext
     {
         private Document doc;
@@ -309,7 +398,7 @@ namespace RevitExportGltf
             newNode.name = e.Name + "[" + e.Id.ToString() + "]";
             //扩展属性
             glTFExtras extras = new glTFExtras();
-            extras.UniqueId = e.UniqueId;
+            extras.UniqueId = e.Id.IntegerValue + "";
             extras.Properties = Util.GetElementProperties(e, true);
             newNode.extras = extras;
 
@@ -446,16 +535,25 @@ namespace RevitExportGltf
                         currentAsset = node.GetAppearance();
                     }
                     //取得Asset中贴图信息
+
+                    string textureFile = "";
+                    var asset = FindTextureAsset(currentAsset);
+                    if (asset != null)
+                    {
 #if R18
-                    string textureFile = (FindTextureAsset(currentAsset as AssetProperty)["unifiedbitmap_Bitmap"]
+                        textureFile = (asset["unifiedbitmap_Bitmap"]
                         as AssetPropertyString).Value.Split('|')[0];
 #else
-string textureFile = (FindTextureAsset(currentAsset as AssetProperty).FindByName("unifiedbitmap_Bitmap")
-                        as AssetPropertyString).Value.Split('|')[0];
+
+                        textureFile = (asset.FindByName("unifiedbitmap_Bitmap")
+                                               as AssetPropertyString).Value.Split('|')[0];
 #endif
+                    }
+
+
 
                     //用Asset中贴图信息和注册表里的材质库地址得到贴图文件所在位置
-                    texturePath = Path.Combine(textureFolder, textureFile.Replace("/", "\\"));
+                    texturePath = Path.Combine(textureFolder, textureFile.Replace("\\", "").Replace("/", "\\"));
                 }
                 catch
                 {
@@ -484,14 +582,18 @@ string textureFile = (FindTextureAsset(currentAsset as AssetProperty).FindByName
                 //如果贴图文件真实存在，就复制到相应位置
                 if (File.Exists(texturePath))
                 {
-                    string dirName = Path.GetFileNameWithoutExtension(FileName) + "(材质贴图)";
+                    string dirName = Path.GetFileNameWithoutExtension(FileName) + "材质贴图";
                     string dir = directory + dirName;
                     if (!Directory.Exists(dir))
                     {
                         //如果不存在就创建 dir 文件夹  
                         Directory.CreateDirectory(dir);
                     }
-
+                    //文件名是否含有非法字符
+                    if (textureName.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0)
+                    {
+                        textureName = ReplaceBadCharOfFileName(textureName);
+                    }
                     File.Copy(texturePath, Path.Combine(dir + "\\" + textureName), true);
                     glTFImage image = new glTFImage();
                     //通过 uri定位到图片资源
@@ -1045,6 +1147,29 @@ string textureFile = (FindTextureAsset(currentAsset as AssetProperty).FindByName
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// 去掉文件名中的无效字符,如 \ / : * ? " < > | 
+        /// </summary>
+        /// <param name="fileName">待处理的文件名</param>
+        /// <returns>处理后的文件名</returns>
+        public string ReplaceBadCharOfFileName(string fileName)
+        {
+            string str = fileName;
+            //u0022双引号
+            Regex regex = new Regex(@"[\\/:\*\?\<\>\|\u0022]");
+            str = str.Replace("\\", string.Empty);
+            str = str.Replace("/", string.Empty);
+            str = str.Replace(":", string.Empty);
+            str = str.Replace("*", string.Empty);
+            str = str.Replace("?", string.Empty);
+            str = str.Replace("\"", string.Empty);
+            str = str.Replace("<", string.Empty);
+            str = str.Replace(">", string.Empty);
+            str = str.Replace("|", string.Empty);
+            str = str.Replace(" ", string.Empty);    //前面的替换会产生空格,最后将其一并替换掉
+            return str;
         }
     }
 }
